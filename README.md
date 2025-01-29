@@ -2,6 +2,8 @@
 
 MCP Server for the Slack API, enabling Claude to interact with Slack workspaces as a user.
 
+<a href="https://glama.ai/mcp/servers/wc0u5519qh"><img width="380" height="200" src="https://glama.ai/mcp/servers/wc0u5519qh/badge" alt="Slack User Server MCP server" /></a>
+
 ## Tools
 
 1. `slack_list_channels`
