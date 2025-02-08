@@ -1,5 +1,6 @@
 # Slack User MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@lars-hagen/slack-user-mcp)](https://smithery.ai/server/@lars-hagen/slack-user-mcp)
 MCP Server for the Slack API, enabling Claude to interact with Slack workspaces as a user.
 
 <a href="https://glama.ai/mcp/servers/wc0u5519qh"><img width="380" height="200" src="https://glama.ai/mcp/servers/wc0u5519qh/badge" alt="Slack User Server MCP server" /></a>
@@ -166,6 +167,14 @@ Then configure Claude Desktop:
     }
   }
 }
+```
+
+### Installing via Smithery
+
+To install Slack User MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@lars-hagen/slack-user-mcp):
+
+```bash
+npx -y @smithery/cli install @lars-hagen/slack-user-mcp --client claude
 ```
 
 ### Troubleshooting
