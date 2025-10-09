@@ -469,6 +469,20 @@ class SlackClient {
       ...(nextCursor && { cursor: nextCursor }),
     };
   }
+
+  async getUserProfile(user_id: string): Promise<any> {
+    const params = new URLSearchParams({
+      user: user_id,
+      include_labels: 'true',
+    });
+
+    const response = await fetch(
+      `https://slack.com/api/users.profile.get?${params}`,
+      { headers: this.headers }
+    );
+
+    return response.json();
+  }
 }
 
 async function main() {
