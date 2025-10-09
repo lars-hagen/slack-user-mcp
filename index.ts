@@ -358,10 +358,18 @@ class SlackClient {
 
 async function main() {
   const token = process.env.SLACK_TOKEN || process.env.SLACK_BOT_TOKEN;
+  const teamId = process.env.SLACK_TEAM_ID;
 
   if (!token) {
     console.error(
       "Please set SLACK_TOKEN (or SLACK_BOT_TOKEN) environment variables",
+    );
+    process.exit(1);
+  }
+
+  if (!token.startsWith('xoxp-') && !token.startsWith('xoxb-') && !teamId) {
+    console.error(
+      "Please set SLACK_TEAM_ID environment variable when using an org level token",
     );
     process.exit(1);
   }
