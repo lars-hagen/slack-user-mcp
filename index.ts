@@ -227,7 +227,7 @@ class SlackClient {
       types: "public_channel",
       exclude_archived: "true",
       limit: Math.min(limit, 200).toString(),
-      team_id: process.env.SLACK_TEAM_ID!,
+      team_id: process.env.SLACK_TEAM_ID,
     });
 
     if (cursor) {
@@ -327,7 +327,7 @@ class SlackClient {
   async getUsers(limit: number = 100, cursor?: string): Promise<any> {
     const params = new URLSearchParams({
       limit: Math.min(limit, 200).toString(),
-      team_id: process.env.SLACK_TEAM_ID!,
+      team_id: process.env.SLACK_TEAM_ID,
     });
 
     if (cursor) {
@@ -358,11 +358,10 @@ class SlackClient {
 
 async function main() {
   const token = process.env.SLACK_TOKEN || process.env.SLACK_BOT_TOKEN;
-  const teamId = process.env.SLACK_TEAM_ID;
 
-  if (!token || !teamId) {
+  if (!token) {
     console.error(
-      "Please set SLACK_TOKEN (or SLACK_BOT_TOKEN) and SLACK_TEAM_ID environment variables",
+      "Please set SLACK_TOKEN (or SLACK_BOT_TOKEN) environment variables",
     );
     process.exit(1);
   }
