@@ -210,16 +210,37 @@ const getUserProfileTool: Tool = {
   },
 };
 
-class SlackClient {
+export class SlackClient {
   private headers: { Authorization: string; "Content-Type": string };
-  private isUserToken: boolean;
+  private teamId?: string;
 
-  constructor(token: string) {
+  constructor(token: string, teamId?: string) {
     this.headers = {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     };
-    this.isUserToken = token.startsWith('xoxp-');
+    this.teamId = teamId;
+  }
+
+  private async request(url: string, init?: RequestInit): Promise<any> {
+    const response = await fetch(url, { ...init, headers: this.headers });
+    let body: any;
+
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error(`Slack API returned an invalid response (${response.status})`);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Slack API request failed (${response.status}): ${body.error || response.statusText}`);
+    }
+
+    if (!body.ok) {
+      throw new Error(`Slack API error: ${body.error || "unknown error"}`);
+    }
+
+    return body;
   }
 
   async getChannels(limit: number = 100, cursor?: string): Promise<any> {
@@ -227,33 +248,25 @@ class SlackClient {
       types: "public_channel",
       exclude_archived: "true",
       limit: Math.min(limit, 200).toString(),
-      team_id: process.env.SLACK_TEAM_ID!,
     });
+
+    if (this.teamId) params.set("team_id", this.teamId);
 
     if (cursor) {
       params.append("cursor", cursor);
     }
 
-    const response = await fetch(
-      `https://slack.com/api/conversations.list?${params}`,
-      { headers: this.headers },
-    );
-
-    return response.json();
+    return this.request(`https://slack.com/api/conversations.list?${params}`);
   }
 
   async postMessage(channel_id: string, text: string): Promise<any> {
-    const response = await fetch("https://slack.com/api/chat.postMessage", {
+    return this.request("https://slack.com/api/chat.postMessage", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify({
         channel: channel_id,
         text: text,
-        as_user: this.isUserToken
       }),
     });
-
-    return response.json();
   }
 
   async postReply(
@@ -261,18 +274,14 @@ class SlackClient {
     thread_ts: string,
     text: string,
   ): Promise<any> {
-    const response = await fetch("https://slack.com/api/chat.postMessage", {
+    return this.request("https://slack.com/api/chat.postMessage", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify({
         channel: channel_id,
         thread_ts: thread_ts,
         text: text,
-        as_user: this.isUserToken
       }),
     });
-
-    return response.json();
   }
 
   async addReaction(
@@ -280,9 +289,8 @@ class SlackClient {
     timestamp: string,
     reaction: string,
   ): Promise<any> {
-    const response = await fetch("https://slack.com/api/reactions.add", {
+    return this.request("https://slack.com/api/reactions.add", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify({
         channel: channel_id,
         timestamp: timestamp,
@@ -290,7 +298,6 @@ class SlackClient {
       }),
     });
 
-    return response.json();
   }
 
   async getChannelHistory(
@@ -302,12 +309,7 @@ class SlackClient {
       limit: limit.toString(),
     });
 
-    const response = await fetch(
-      `https://slack.com/api/conversations.history?${params}`,
-      { headers: this.headers },
-    );
-
-    return response.json();
+    return this.request(`https://slack.com/api/conversations.history?${params}`);
   }
 
   async getThreadReplies(channel_id: string, thread_ts: string): Promise<any> {
@@ -316,29 +318,21 @@ class SlackClient {
       ts: thread_ts,
     });
 
-    const response = await fetch(
-      `https://slack.com/api/conversations.replies?${params}`,
-      { headers: this.headers },
-    );
-
-    return response.json();
+    return this.request(`https://slack.com/api/conversations.replies?${params}`);
   }
 
   async getUsers(limit: number = 100, cursor?: string): Promise<any> {
     const params = new URLSearchParams({
       limit: Math.min(limit, 200).toString(),
-      team_id: process.env.SLACK_TEAM_ID!,
     });
+
+    if (this.teamId) params.set("team_id", this.teamId);
 
     if (cursor) {
       params.append("cursor", cursor);
     }
 
-    const response = await fetch(`https://slack.com/api/users.list?${params}`, {
-      headers: this.headers,
-    });
-
-    return response.json();
+    return this.request(`https://slack.com/api/users.list?${params}`);
   }
 
   async getUserProfile(user_id: string): Promise<any> {
@@ -347,12 +341,7 @@ class SlackClient {
       include_labels: "true",
     });
 
-    const response = await fetch(
-      `https://slack.com/api/users.profile.get?${params}`,
-      { headers: this.headers },
-    );
-
-    return response.json();
+    return this.request(`https://slack.com/api/users.profile.get?${params}`);
   }
 }
 
@@ -360,9 +349,9 @@ async function main() {
   const token = process.env.SLACK_TOKEN || process.env.SLACK_BOT_TOKEN;
   const teamId = process.env.SLACK_TEAM_ID;
 
-  if (!token || !teamId) {
+  if (!token) {
     console.error(
-      "Please set SLACK_TOKEN (or SLACK_BOT_TOKEN) and SLACK_TEAM_ID environment variables",
+      "Please set the SLACK_TOKEN (or SLACK_BOT_TOKEN) environment variable",
     );
     process.exit(1);
   }
@@ -380,12 +369,12 @@ async function main() {
     },
   );
 
-  const slackClient = new SlackClient(token);
+  const slackClient = new SlackClient(token, teamId);
 
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request: CallToolRequest) => {
-      console.error("Received CallToolRequest:", request);
+      console.error("Received CallToolRequest:", request.params.name);
       try {
         if (!request.params.arguments) {
           throw new Error("No arguments provided");
@@ -515,8 +504,9 @@ async function main() {
         }
       } catch (error) {
         console.error("Error executing tool:", error);
-        return {
-          content: [
+          return {
+            isError: true,
+            content: [
             {
               type: "text",
               text: JSON.stringify({
@@ -552,7 +542,9 @@ async function main() {
   console.error("Slack MCP Server running on stdio");
 }
 
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-});
+if (process.argv[1]?.endsWith("index.js")) {
+  main().catch((error) => {
+    console.error("Fatal error in main():", error);
+    process.exit(1);
+  });
+}

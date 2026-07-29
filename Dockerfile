@@ -1,13 +1,11 @@
-FROM node:22.12-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Copy necessary files for the build
 COPY package*.json tsconfig.json index.ts ./
 
 WORKDIR /
 
-RUN --mount=type=cache,target=/root/.npm npm install
-
-RUN --mount=type=cache,target=/root/.npm-production npm ci --ignore-scripts --omit-dev
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 FROM node:22-alpine AS release
 
@@ -21,6 +19,6 @@ LABEL org.opencontainers.image.description="MCP server for interacting with Slac
 
 WORKDIR /app
 
-RUN npm ci --ignore-scripts --omit-dev
+RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts --omit-dev
 
 ENTRYPOINT ["node", "dist/index.js"]

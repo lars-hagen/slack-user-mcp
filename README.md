@@ -82,11 +82,13 @@ MCP Server for the Slack API, enabling Claude to interact with Slack workspaces 
    - `reactions:write` - Add emoji reactions to messages
    - `users:read` - View users and their basic information
 
-4. Install App to Workspace:
+3. Install App to Workspace:
    - Click "Install to Workspace" and authorize the app
-   - Save the "User OAuth Token" that starts with `xoxp-`
+    - Save the "User OAuth Token" that starts with `xoxp-`.
 
-5. Get your Team ID (starts with a `T`) by following [this guidance](https://slack.com/help/articles/221769328-Locate-your-Slack-URL-or-ID#find-your-workspace-or-org-id)
+4. For organization-level tokens, get your Team ID (starts with a `T`) by following [this guidance](https://slack.com/help/articles/221769328-Locate-your-Slack-URL-or-ID#find-your-workspace-or-org-id). It is optional for ordinary workspace tokens.
+
+Treat OAuth tokens as secrets. Do not commit them, put them in issues or pull requests, or paste them into shared configuration. Rotate a token immediately if it is exposed.
 
 ### Usage with Claude Desktop
 
@@ -115,8 +117,7 @@ Then configure Claude Desktop:
         "start"
       ],
       "env": {
-        "SLACK_TOKEN": "xoxp-your-user-token",
-        "SLACK_TEAM_ID": "T01234567"
+        "SLACK_TOKEN": "xoxp-your-user-token"
       }
     }
   }
@@ -125,23 +126,7 @@ Then configure Claude Desktop:
 
 #### NPX
 
-```json
-{
-  "mcpServers": {
-    "slack": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-slack-user"
-      ],
-      "env": {
-        "SLACK_TOKEN": "xoxp-your-user-token",
-        "SLACK_TEAM_ID": "T01234567"
-      }
-    }
-  }
-}
-```
+This project is not published to npm. Do not use an `npx` package name for it. Clone and build it locally as shown above, then use the local configuration.
 
 #### Docker
 
@@ -156,25 +141,24 @@ Then configure Claude Desktop:
         "--rm",
         "-e",
         "SLACK_TOKEN",
-        "-e",
-        "SLACK_TEAM_ID",
-        "mcp/slack-user"
+        "slack-user-mcp"
       ],
       "env": {
-        "SLACK_TOKEN": "xoxp-your-user-token",
-        "SLACK_TEAM_ID": "T01234567"
+        "SLACK_TOKEN": "xoxp-your-user-token"
       }
     }
   }
 }
 ```
 
+Build the image first with `docker build -t slack-user-mcp .`. Add `-e SLACK_TEAM_ID` and `SLACK_TEAM_ID` to `env` only when using an organization-level token.
+
 ### Installing via Smithery
 
 To install Slack User Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@lars-hagen/slack-user-mcp):
 
 ```bash
-npx -y @smithery/cli install @lars-hagen/slack-user-mcp2 --client claude
+npx -y @smithery/cli install @lars-hagen/slack-user-mcp --client claude
 ```
 
 ### Troubleshooting
@@ -182,17 +166,21 @@ npx -y @smithery/cli install @lars-hagen/slack-user-mcp2 --client claude
 If you encounter permission errors, verify that:
 1. All required scopes are added to your Slack app
 2. The app is properly installed to your workspace
-3. The tokens and workspace ID are correctly copied to your configuration
+3. The token and, when needed, workspace ID are correctly copied to your configuration
 4. The app has been added to the channels it needs to access
-5. You're using a User OAuth Token (starts with xoxp-) not a Bot Token
+5. You're using a User OAuth Token (starts with `xoxp-`) rather than a Bot Token
 
 ## Build
 
 Docker build:
 
 ```bash
-docker build -t mcp/slack-user -f src/slack/Dockerfile .
+docker build -t slack-user-mcp .
 ```
+
+## Maintenance status
+
+This project receives focused, best-effort maintenance. It has no support SLA. Please report security concerns privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
