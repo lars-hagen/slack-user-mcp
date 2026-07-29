@@ -1,9 +1,9 @@
 # Slack User MCP Server
-[![smithery badge](https://smithery.ai/badge/@lars-hagen/slack-user-mcp)](https://smithery.ai/server/@lars-hagen/slack-user-mcp)
+[![CI](https://github.com/lars-hagen/slack-user-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/lars-hagen/slack-user-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/lars-hagen/slack-user-mcp/blob/main/LICENSE)
+[![Security Policy](https://img.shields.io/badge/security-policy-blue.svg)](https://github.com/lars-hagen/slack-user-mcp/blob/main/SECURITY.md)
 
 MCP Server for the Slack API, enabling Claude to interact with Slack workspaces as a user.
-
-<a href="https://glama.ai/mcp/servers/wc0u5519qh"><img width="380" height="200" src="https://glama.ai/mcp/servers/wc0u5519qh/badge" alt="Slack User Server MCP server" /></a>
 
 ## Tools
 
