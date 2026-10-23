@@ -7,64 +7,93 @@ MCP Server for the Slack API, enabling Claude to interact with Slack workspaces 
 
 ## Tools
 
+All read tools return **compact projections** by default (trimmed fields, message text truncated at 500 chars) to keep responses token-efficient. Pass `verbose: true` on any read tool to get the full raw Slack object.
+
 1. `slack_list_channels`
-   - List public channels in the workspace
+   - List conversations in the workspace
    - Optional inputs:
-     - `limit` (number, default: 100, max: 200): Maximum number of channels to return
+     - `limit` (number, default: 20, max: 200): Maximum number of channels to return
      - `cursor` (string): Pagination cursor for next page
+     - `types` (string): Comma-separated `public_channel,private_channel,im,mpim` (default: `public_channel`)
+     - `name_filter` (string): Only channels whose name contains this substring
+     - `include_archived` (boolean, default: false)
+     - `verbose` (boolean)
    - Returns: List of channels with their IDs and information
 
-2. `slack_post_message`
-   - Post a new message to a Slack channel
-   - Required inputs:
-     - `channel_id` (string): The ID of the channel to post to
-     - `text` (string): The message text to post
-   - Returns: Message posting confirmation and timestamp
+2. `slack_search_channels`
+   - Find channels by name across public and private channels (paged scan, most efficient way to resolve a channel name to an ID)
+   - Required inputs: `query` (string): Name substring
+   - Optional inputs: `limit` (number, default: 10), `verbose`
 
-3. `slack_reply_to_thread`
+3. `slack_list_dms`
+   - List your DM and group-DM conversations, most recently updated first (requires `im:read`/`mpim:read`)
+   - Optional inputs: `limit` (number, default: 20), `cursor`, `verbose`
+
+4. `slack_search_messages`
+   - Workspace-wide message search with Slack modifiers (`in:#channel`, `from:@user`, `after:YYYY-MM-DD`, `has:link`, …). Requires `search:read`
+   - Required inputs: `query` (string)
+   - Optional inputs: `count` (default: 20, max: 100), `page`, `sort` (`score`|`timestamp`), `sort_dir`, `verbose`
+
+5. `slack_post_message`
+   - Post a new message to any conversation (channel or DM)
+   - Required inputs: `channel_id`, `text`
+
+6. `slack_schedule_message`
+   - Schedule a message for future delivery
+   - Required inputs: `channel_id`, `text`, `post_at` (number, Unix epoch seconds)
+
+7. `slack_reply_to_thread`
    - Reply to a specific message thread
-   - Required inputs:
-     - `channel_id` (string): The channel containing the thread
-     - `thread_ts` (string): Timestamp of the parent message
-     - `text` (string): The reply text
-   - Returns: Reply confirmation and timestamp
+   - Required inputs: `channel_id`, `thread_ts`, `text`
 
-4. `slack_add_reaction`
-   - Add an emoji reaction to a message
-   - Required inputs:
-     - `channel_id` (string): The channel containing the message
-     - `timestamp` (string): Message timestamp to react to
-     - `reaction` (string): Emoji name without colons
-   - Returns: Reaction confirmation
+8. `slack_add_reaction`
+   - Add an emoji reaction to a message (requires `reactions:write`)
+   - Required inputs: `channel_id`, `timestamp`, `reaction` (emoji name without colons)
 
-5. `slack_get_channel_history`
-   - Get recent messages from a channel
-   - Required inputs:
-     - `channel_id` (string): The channel ID
-   - Optional inputs:
-     - `limit` (number, default: 10): Number of messages to retrieve
-   - Returns: List of messages with their content and metadata
+9. `slack_get_reactions`
+   - Get the emoji reactions on a message (requires `reactions:read`)
+   - Required inputs: `channel_id`, `timestamp`
 
-6. `slack_get_thread_replies`
-   - Get all replies in a message thread
-   - Required inputs:
-     - `channel_id` (string): The channel containing the thread
-     - `thread_ts` (string): Timestamp of the parent message
-   - Returns: List of replies with their content and metadata
+10. `slack_get_channel_history`
+    - Get messages from a channel or DM
+    - Required inputs: `channel_id`
+    - Optional inputs:
+      - `limit` (number, default: 20)
+      - `oldest` / `latest` (string): Slack ts bounds — use for time-window queries like "today"
+      - `cursor`, `verbose`
 
+11. `slack_get_thread_replies`
+    - Get replies in a message thread
+    - Required inputs: `channel_id`, `thread_ts`
+    - Optional inputs: `limit` (default: 50), `oldest`, `latest`, `verbose`
 
-7. `slack_get_users`
-   - Get list of workspace users with basic profile information
-   - Optional inputs:
-     - `cursor` (string): Pagination cursor for next page
-     - `limit` (number, default: 100, max: 200): Maximum users to return
-   - Returns: List of users with their basic profiles
+12. `slack_get_users`
+    - List workspace users (compact profiles)
+    - Optional inputs: `cursor`, `limit` (default: 50, max: 200), `name_filter` (string), `verbose`
 
-8. `slack_get_user_profile`
-   - Get detailed profile information for a specific user
-   - Required inputs:
-     - `user_id` (string): The user's ID
-   - Returns: Detailed user profile information
+13. `slack_get_user_profile`
+    - Get detailed profile information for a specific user
+    - Required inputs: `user_id`
+
+14. `slack_lookup_user_by_email`
+    - Find a user by email address (requires `users:read.email`)
+    - Required inputs: `email`
+
+15. `slack_list_channel_members`
+    - List user IDs of members of a channel/conversation
+    - Required inputs: `channel_id`
+    - Optional inputs: `limit` (default: 100), `cursor`
+
+16. `slack_create_conversation`
+    - Create a channel (pass `name`, optional `is_private`) or open a DM/group DM (pass `user_ids`, comma-separated). Requires the matching `channels:write` / `groups:write` / `im:write` / `mpim:write` scope
+
+17. `slack_upload_file`
+    - Upload a local file to Slack (two-step external upload), optionally sharing to a channel. Requires `files:write`
+    - Required inputs: `file_path` (absolute local path)
+    - Optional inputs: `channel_id`, `title`, `initial_comment`
+
+18. `slack_get_emoji_list`
+    - List custom emoji in the workspace (names only unless `verbose`)
 
 ## Setup
 
