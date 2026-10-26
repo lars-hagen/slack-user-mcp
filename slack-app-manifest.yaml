@@ -1,0 +1,33 @@
+display_information:
+  name: slack-user-mcp
+  description: Personal Slack token for the slack-user-mcp MCP server (omp/Claude agents act as you)
+  background_color: "#2d1e3e"
+oauth_config:
+  scopes:
+    user:
+      # core
+      - channels:history
+      - channels:read
+      - chat:write
+      - reactions:write
+      - users:read
+      # extended: search, DMs, private channels, uploads, profiles
+      - search:read
+      - im:read
+      - mpim:read
+      - im:history
+      - mpim:history
+      - groups:read
+      - groups:history
+      - users:read.email
+      - reactions:read
+      - files:write
+      - emoji:read
+      - channels:write
+      - groups:write
+      - im:write
+      - mpim:write
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
