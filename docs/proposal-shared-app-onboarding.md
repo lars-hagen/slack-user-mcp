@@ -96,6 +96,36 @@ changes propagate centrally, and the callback is deploy-once-forget.
    Option 1 is truly one ticket.
 3. (Option 1) Approve the callback's domain/TLS endpoint per the hosting choice.
 
+## Addendum — "why not a localhost callback like Claude's official Slack MCP?" (thread Q&A, 2026-10-26)
+
+Asked by Aswin in the thread: Claude's official Slack MCP plugin spins up a
+`localhost:3118` listener for the OAuth redirect — could we do that instead of
+hosting anything?
+
+**Why localhost works there and not for a shared classic app:**
+`mcp.slack.com` is an MCP-native authorization server — Dynamic Client
+Registration (RFC 7591) + PKCE (RFC 7636) + loopback redirect (RFC 8252). Each
+MCP client registers itself and proves the exchange with a per-flow PKCE
+verifier; there is no shared app secret to protect. Classic Slack apps (the
+source of `xoxp` user tokens) support neither DCR nor PKCE — the exchange still
+requires the app's `client_secret`, so a localhost listener on a *shared* app
+would mean shipping the secret to every laptop. Anyone holding it can run a
+consent-phishing flow as the app. Not acceptable.
+
+**Where the localhost trick does apply: Option 2.** With per-user manifest apps
+each engineer owns their own app's client_id/secret (visible on their own app
+page), so a localhost-callback onboarding script is safe: create app from
+`slack-app-manifest.yaml` → run `npm run onboard` → script opens the authorize
+URL, listens on `localhost:<port>`, catches the code, exchanges it with the
+user's own credentials, writes the token straight into `~/.omp/agent/mcp.json`.
+No hosting, no shared secret, no token copy-paste — near-parity with the
+official plugin's UX. Build it if Option 2 becomes the chosen path.
+
+(Why not just use Slack's hosted MCP: the thread's original problem — NSClient
+TLS-intercepts `mcp.slack.com` and breaks its OAuth — plus slack-user-mcp
+exposes 18 user-token tools the hosted MCP doesn't, incl. workspace search and
+DMs.)
+
 ## Rollout
 
 1. File the CorpIT ticket (above asks).
